@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Ghép 3 mảnh — Công thức Vật Lý</title>
+<style>
+:root{
+  --bg:#f4f7fb;
+  --accent:#2f9d58;
+  --card-size:calc(min(72px, 14vw));
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;}
+body{background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
+
+/* Start screen centered */
+#startScreen {
+  width:100%; max-width:720px; background:#fff; border-radius:12px;
+  padding:28px; box-shadow:0 20px 50px rgba(2,6,23,0.08); text-align:center;
+}
+h1{margin:0 0 6px;font-size:20px}
+.description{color:#555;margin-bottom:12px;font-size:14px;}
+.controls{display:flex;gap:8px;justify-content:center;align-items:center}
+input#playerName{padding:10px 12px;border-radius:8px;border:1px solid #e6eef0;width:60%;max-width:340px;font-size:15px}
+button.btn{background:var(--accent);color:#fff;border:0;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer}
+
+/* Main game */
+#mainGame{display:none;width:100%;max-width:920px;margin-top:16px}
+.header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.infoCard{background:#fff;padding:10px 12px;border-radius:10px;box-shadow:0 8px 16px rgba(2,6,23,0.06);display:flex;gap:12px;align-items:center}
+.infoCard div{font-weight:600;font-size:14px}
+.best{font-weight:600;color:#333}
+
+/* Grid */
+#gridWrap{display:flex;justify-content:center}
+#grid{
+  display:grid;
+  grid-template-columns:repeat(6,var(--card-size));
+  gap:10px;padding:10px;
+  justify-content:center;
+}
+
+/* Card */
+.card{width:var(--card-size);height:var(--card-size);perspective:700px;position:relative;-webkit-tap-highlight-color:transparent}
+.inner{width:100%;height:100%;border-radius:10px;position:relative;transform-style:preserve-3d;transition:transform 420ms cubic-bezier(.2,.9,.3,1),opacity 260ms ease;box-shadow:0 8px 18px rgba(2,6,23,0.08)}
+.card.flipped .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;backface-visibility:hidden;-webkit-backface-visibility:hidden;user-select:none;border-radius:10px;padding:6px;text-align:center;font-weight:800;font-size:calc(min(14px,3.6vw));pointer-events:none}
+.face.back{background:var(--accent);color:#fff}
+.face.front{background:#fff;color:#111;transform:rotateY(180deg);border:2px solid #e6f3ea}
+
+/* Removed (matched) -> keep slot but show tick */
+.card.removed .inner{opacity:0;pointer-events:none;transform:none !important;box-shadow:none}
+.tick{position:absolute;right:6px;top:6px;width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:var(--accent);background:transparent;pointer-events:none;transition:all 220ms ease}
+.card.removed .tick{background:var(--accent);color:#fff}
+
+/* Popups */
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:80}
+.popup{display:none;position:fixed;z-index:90;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;border-radius:12px;width:min(92%,420px);box-shadow:0 18px 40px rgba(2,6,23,0.25);text-align:center}
+.popup h2{margin:8px 0 6px;font-size:20px}
+.small{font-size:13px;color:#555}
+
+/* responsive */
+@media (max-width:520px){:root{--card-size:calc(min(60px,18vw));}#grid{gap:8px}}
+@media (max-width:380px){:root{--card-size:calc(min(56px,20vw));}#grid{gap:6px}}
+</style>
+</head>
+<body>
+
+<!-- Start screen -->
+<div id="startScreen" role="dialog" aria-modal="true">
+  <h1>Ghép 3 mảnh — Công thức Vật Lý</h1>
+  <p class="description">Nhập tên/biệt danh của bạn rồi bấm Bắt đầu. Mỗi mảnh xuất hiện 5 lần (tổng 30 ô). Thời gian: 5 phút.</p>
+  <div class="controls">
+    <input id="playerName" type="text" placeholder="Nhập tên hoặc biệt danh" aria-label="Tên người chơi" />
+    <button id="startBtn" class="btn">Bắt đầu</button>
+  </div>
+  <p style="margin-top:10px;color:#666;font-size:13px">Lưu ý: chỉ khi lật đủ cả 3 mảnh đúng của cùng một công thức (ví dụ Wđ + 1/2 m + v²) thì được tính là đúng.</p>
+</div>
+
+<!-- Main game -->
+<div id="mainGame" aria-live="polite" style="display:none">
+  <div class="header">
+    <div class="infoCard">
+      <div>⏳ Thời gian: <span id="timeDisplay">05:00</span></div>
+      <div>⭐ Ghép đúng: <span id="matchesDisplay">0</span></div>
+    </div>
+    <div class="best" id="bestDisplay">Kỷ lục: --</div>
+  </div>
+
+  <div id="gridWrap"><div id="grid" role="grid" aria-label="Bảng ghép"></div></div>
+
+  <div style="display:flex;justify-content:center;gap:12px;margin-top:12px">
+    <button id="playAgainBtn" class="btn" style="display:none">Chơi lại</button>
+    <button id="restartBtn" class="btn" style="background:#3b82f6;display:none">Reset</button>
+  </div>
+</div>
+
+<!-- Overlay & Popups -->
+<div id="overlay"></div>
+
+<div id="winPopup" class="popup" role="dialog" aria-modal="true">
+  <h2>🎉 Bạn chiến thắng!</h2>
+  <p class="small" id="winSummary"></p>
+  <p class="small">Điểm: <strong id="winPoints">0</strong></p>
+  <div style="margin-top:12px"><button id="winPlayAgain" class="btn">Chơi lại</button></div>
+</div>
+
+<div id="losePopup" class="popup" role="dialog" aria-modal="true">
+  <h2>⏳ Hết giờ</h2>
+  <p class="small" id="loseSummary"></p>
+  <p class="small">Điểm: <strong id="losePoints">0</strong></p>
+  <div style="margin-top:12px"><button id="losePlayAgain" class="btn">Chơi lại</button></div>
+</div>
+
+<script>
+/* ======= Configuration ======= */
+const FORMULAS = {
+  kinetic: ["Wđ","1/2 m","v²"],
+  potential: ["Wt","10 m","h"]
+};
+const ALL_PIECES = [...FORMULAS.kinetic, ...FORMULAS.potential]; // 6 unique pieces
+const BEST_KEY = 'match3_best_v_final';
+
+/* ======= State ======= */
+let deck = [];           // 30 items
+let flipped = [];        // flipped card elements (max 3)
+let busy = false;
+let removedCount = 0;    // pieces removed (increments by 3 on each match)
+let matches = 0;
+let countdown = 300;     // seconds
+let timerId = null;
+let playerName = '';
+
+/* ======= DOM refs ======= */
+const startScreen = document.getElementById('startScreen');
+const startBtn = document.getElementById('startBtn');
+const playerNameInput = document.getElementById('playerName');
+const mainGame = document.getElementById('mainGame');
+const grid = document.getElementById('grid');
+const timeDisplay = document.getElementById('timeDisplay');
+const matchesDisplay = document.getElementById('matchesDisplay');
+const bestDisplay = document.getElementById('bestDisplay');
+const overlay = document.getElementById('overlay');
+const winPopup = document.getElementById('winPopup');
+const losePopup = document.getElementById('losePopup');
+const winSummary = document.getElementById('winSummary');
+const winPoints = document.getElementById('winPoints');
+const loseSummary = document.getElementById('loseSummary');
+const losePoints = document.getElementById('losePoints');
+const winPlayAgain = document.getElementById('winPlayAgain');
+const losePlayAgain = document.getElementById('losePlayAgain');
+const playAgainBtn = document.getElementById('playAgainBtn');
+const restartBtn = document.getElementById('restartBtn');
+
+/* ======= Audio (WebAudio) ======= */
+let audioCtx = null;
+function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+function playCorrect(){ ensureAudio(); const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sine'; o.frequency.value=880; g.gain.value=0.08; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=> o.frequency.setValueAtTime(1320, audioCtx.currentTime),80); setTimeout(()=> o.stop(),180); }
+function playWrong(){ ensureAudio(); const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sawtooth'; o.frequency.value=220; g.gain.value=0.06; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=> o.stop(),160); }
+
+/* ======= Helpers ======= */
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+function formatTime(sec){ const m=Math.floor(sec/60), s=sec%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+function loadBest(){ try{ return JSON.parse(localStorage.getItem(BEST_KEY)); }catch(e){return null;} }
+function saveBest(obj){ try{ localStorage.setItem(BEST_KEY, JSON.stringify(obj)); }catch(e){} }
+function updateBestUI(){ const b=loadBest(); bestDisplay.textContent = b ? `Kỷ lục: ${b.name} — ${b.points}` : 'Kỷ lục: --'; }
+
+/* ======= Build deck (30 pieces) ======= */
+function buildDeck(){
+  deck = [];
+  ALL_PIECES.forEach(p => { for(let i=0;i<5;i++) deck.push(p); });
+  shuffle(deck);
+}
+
+/* ======= Render grid ======= */
+function renderGrid(){
+  grid.innerHTML = '';
+  deck.forEach((text, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.index = idx;
+    card.dataset.value = text;
+
+    const inner = document.createElement('div'); inner.className='inner';
+    const back = document.createElement('div'); back.className='face back'; back.textContent='?';
+    const front = document.createElement('div'); front.className='face front'; front.textContent=text;
+    const tick = document.createElement('div'); tick.className='tick'; tick.textContent='✔';
+
+    inner.appendChild(back);
+    inner.appendChild(front);
+    card.appendChild(inner);
+    card.appendChild(tick);
+
+    // click handler on card container
+    card.addEventListener('click', ()=> onCardClick(card));
+    grid.appendChild(card);
+  });
+}
+
+/* ======= Game flow ======= */
+function startGame(){
+  const name = playerNameInput.value.trim();
+  if(!name){ alert('Vui lòng nhập tên hoặc biệt danh.'); playerNameInput.focus(); return; }
+  playerName = name;
+  startScreen.style.display = 'none';
+  mainGame.style.display = 'block';
+  playAgainBtn.style.display = 'none';
+  restartBtn.style.display = 'inline-block';
+
+  resetState();
+  buildDeck();
+  renderGrid();
+  updateBestUI();
+  startTimer();
+}
+
+function resetState(){
+  flipped = []; busy = false; removedCount = 0; matches = 0; countdown = 300;
+  clearInterval(timerId);
+  timeDisplay.textContent = formatTime(countdown);
+  matchesDisplay.textContent = matches;
+  hidePopups();
+}
+
+function onCardClick(card){
+  if(busy) return;
+  if(card.classList.contains('removed')) return;
+  if(card.classList.contains('flipped')) return;
+  if(flipped.length >= 3) return;
+
+  card.classList.add('flipped');
+  flipped.push(card);
+
+  if(flipped.length === 3){
+    busy = true;
+    setTimeout(evaluateFlipped, 440); // wait for flip animation
+  }
+}
+
+function evaluateFlipped(){
+  const values = flipped.map(c=>c.dataset.value);
+  const isKinetic = FORMULAS.kinetic.every(x=> values.includes(x));
+  const isPotential = FORMULAS.potential.every(x=> values.includes(x));
+  if(isKinetic || isPotential){
+    // correct
+    playCorrect();
+    flipped.forEach(c=>{
+      c.classList.remove('flipped');
+      c.classList.add('removed');
+      // CSS .card.removed .tick will show green tick
+    });
+    removedCount += 3;
+    matches += 1;
+    matchesDisplay.textContent = matches;
+    flipped = [];
+    busy = false;
+    if(removedCount >= deck.length){ clearInterval(timerId); finishGame(true); }
+  } else {
+    // wrong -> flip back after 1s
+    playWrong();
+    setTimeout(()=>{
+      flipped.forEach(c=> c.classList.remove('flipped'));
+      flipped = [];
+      busy = false;
+    }, 1000);
+  }
+}
+
+/* ======= Timer ======= */
+function startTimer(){
+  timeDisplay.textContent = formatTime(countdown);
+  timerId = setInterval(()=>{
+    countdown--;
+    timeDisplay.textContent = formatTime(countdown);
+    if(countdown <= 0){ clearInterval(timerId); finishGame(false); }
+  },1000);
+}
+
+/* ======= Finish & scoring ======= */
+function finishGame(won){
+  hidePopups();
+  overlay.style.display = 'block';
+  if(won){
+    const points = matches * 100 + countdown * 10;
+    winSummary.textContent = `${playerName} — Lần ghép đúng: ${matches} • Thời gian còn: ${formatTime(countdown)}`;
+    winPoints.textContent = points;
+    winPopup.style.display = 'block';
+    // save best if higher
+    const best = loadBest();
+    if(!best || points > best.points){
+      saveBest({name: playerName, points});
+    }
+    updateBestUI();
+  } else {
+    const points = matches * 100 + countdown * 10;
+    loseSummary.textContent = `${playerName} — Bạn đã ghép được ${matches} lần.`;
+    losePoints.textContent = points;
+    losePopup.style.display = 'block';
+  }
+}
+
+/* hide popups */
+function hidePopups(){ overlay.style.display = 'none'; winPopup.style.display = 'none'; losePopup.style.display = 'none'; }
+
+/* ======= Buttons ======= */
+startBtn.addEventListener('click', startGame);
+winPlayAgain.addEventListener('click', ()=> { hidePopups(); overlay.style.display='none'; resetState(); buildDeck(); renderGrid(); startTimer(); });
+losePlayAgain.addEventListener('click', ()=> { hidePopups(); overlay.style.display='none'; resetState(); buildDeck(); renderGrid(); startTimer(); });
+playAgainBtn.addEventListener('click', ()=> { resetState(); buildDeck(); renderGrid(); startTimer(); playAgainBtn.style.display='none'; });
+restartBtn.addEventListener('click', ()=> { resetState(); buildDeck(); renderGrid(); startTimer(); });
+
+overlay.addEventListener('click', ()=> { hidePopups(); overlay.style.display='none'; });
+
+/* ======= Init ======= */
+(function init(){
+  updateBestUI();
+})();
+</script>
+</body>
+</html>
