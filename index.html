@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Ghép 3 mảnh — Công thức Vật Lý</title>
+<title>Lật mảnh ghép công thức</title>
 <style>
 :root{
   --bg:#f4f7fb;
@@ -69,13 +69,13 @@ button.btn{background:var(--accent);color:#fff;border:0;padding:10px 14px;border
 
 <!-- Start screen -->
 <div id="startScreen" role="dialog" aria-modal="true">
-  <h1>Ghép 3 mảnh — Công thức Vật Lý</h1>
-  <p class="description">Nhập tên/biệt danh của bạn rồi bấm Bắt đầu. Mỗi mảnh xuất hiện 5 lần (tổng 30 ô). Thời gian: 5 phút.</p>
+  <h1>Lật mảnh ghép công thức</h1>
+  <p class="description">Nhập tên/biệt danh của bạn rồi bấm Bắt đầu. Mỗi công thức xuất hiện 5 lần (tổng 30 ô). Thời gian: 5 phút.</p>
   <div class="controls">
     <input id="playerName" type="text" placeholder="Nhập tên hoặc biệt danh" aria-label="Tên người chơi" />
     <button id="startBtn" class="btn">Bắt đầu</button>
   </div>
-  <p style="margin-top:10px;color:#666;font-size:13px">Lưu ý: chỉ khi lật đủ cả 3 mảnh đúng của cùng một công thức (ví dụ Wđ = + 1/2 m + v²) thì được tính là đúng.</p>
+  <p style="margin-top:10px;color:#666;font-size:13px">Lưu ý: chỉ khi lật đủ cả 3 ô đúng của cùng một công thức (ví dụ ô "Wđ =" + ô "1/2 m" + ô "v²") thì được tính là đúng.</p>
 </div>
 
 <!-- Main game -->
@@ -319,5 +319,6 @@ overlay.addEventListener('click', ()=> { hidePopups(); overlay.style.display='no
 </script>
 </body>
 </html>
+
 
 
