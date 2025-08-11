@@ -75,7 +75,7 @@ button.btn{background:var(--accent);color:#fff;border:0;padding:10px 14px;border
     <input id="playerName" type="text" placeholder="Nhập tên hoặc biệt danh" aria-label="Tên người chơi" />
     <button id="startBtn" class="btn">Bắt đầu</button>
   </div>
-  <p style="margin-top:10px;color:#666;font-size:13px">Lưu ý: chỉ khi lật đủ cả 3 mảnh đúng của cùng một công thức (ví dụ Wđ + 1/2 m + v²) thì được tính là đúng.</p>
+  <p style="margin-top:10px;color:#666;font-size:13px">Lưu ý: chỉ khi lật đủ cả 3 mảnh đúng của cùng một công thức (ví dụ Wđ "=" + 1/2 m + v²) thì được tính là đúng.</p>
 </div>
 
 <!-- Main game -->
@@ -116,8 +116,8 @@ button.btn{background:var(--accent);color:#fff;border:0;padding:10px 14px;border
 <script>
 /* ======= Configuration ======= */
 const FORMULAS = {
-  kinetic: ["Wđ","1/2 m","v²"],
-  potential: ["Wt","10 m","h"]
+  kinetic: ["Wđ =","1/2 m","v²"],
+  potential: ["Wt =","10 m","h"]
 };
 const ALL_PIECES = [...FORMULAS.kinetic, ...FORMULAS.potential]; // 6 unique pieces
 const BEST_KEY = 'match3_best_v_final';
@@ -319,3 +319,4 @@ overlay.addEventListener('click', ()=> { hidePopups(); overlay.style.display='no
 </script>
 </body>
 </html>
+
